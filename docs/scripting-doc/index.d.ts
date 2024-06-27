@@ -290,7 +290,7 @@ interface FilePath {
    * The local file path, or empty if the current URL value doesn't refer
    * to a local file.
    *
-   * @since 1.10.3
+   * @since 1.11
    */
   localFile: string;
 }
@@ -391,12 +391,12 @@ declare namespace Qt {
      * Controls whether this widget is visible.
      * When toggling this property, the dialog layout will automatically adjust itself
      * based on the visible widgets.
-     * Qt documentation: [QWidget.visible](https://doc.qt.io/qt-6/qwidget.html#visible-prop);
+     * Qt documentation: [QWidget::visible](https://doc.qt.io/qt-6/qwidget.html#visible-prop);
      */
     visible: boolean;
     /**
      * If false, the widget cannot be interacted with.
-     * Qt documentation: [QWidget.enabled](https://doc.qt.io/qt-6/qwidget.html#enabled-prop)
+     * Qt documentation: [QWidget::enabled](https://doc.qt.io/qt-6/qwidget.html#enabled-prop)
      */
     enabled: boolean;
     /**
@@ -992,7 +992,7 @@ declare class ObjectGroup extends Layer {
 /**
  * A type alias used to describe the possible values in object properties.
  */
-type TiledObjectPropertyValue = number | string | boolean | ObjectRef | FilePath | MapObject | PropertyValue | undefined
+type TiledObjectPropertyValue = number | string | boolean | color | ObjectRef | FilePath | MapObject | PropertyValue | undefined
 
 /**
  * An interface used to describe object properties.
@@ -1038,18 +1038,37 @@ declare class TiledObject {
   property(name: string): TiledObjectPropertyValue;
 
   /**
-   * Sets the value of the custom property with the given name. Supported
-   * types are `bool`, `number`, `string`, {@link FilePath},
-   * {@link ObjectRef} and {@link MapObject}.
+   * Sets the value of the custom property with the given name.
+   *
+   * Supported types are `bool`, `number`, `string`, {@link color},
+   * {@link FilePath}, {@link ObjectRef}, {@link MapObject} and
+   * {@link PropertyValue}.
+   *
+   * @note When setting a `number`, the property type will be set to either
+   * `int` or `float`, depending on whether it is a whole number. To force
+   * the property to be `float`, use {@link setFloatProperty}.
+   */
+  setProperty(name: string, value: TiledObjectPropertyValue): void;
+
+  /**
+   * Sets the value of an object's property identified by the given path
+   * to the given value.
+   *
+   * The path is a list of property names, where each name identifies
+   * a member of the previous member's value. The last name in the list
+   * identifies the property to set.
+   *
+   * Supported types are `bool`, `number`, `string`, {@link color},
+   * {@link FilePath}, {@link ObjectRef}, {@link MapObject} and
+   * {@link PropertyValue}.
    *
    * @note When setting a `number`, the property type will be set to either
    * `int` or `float`, depending on whether it is a whole number. To force
    * the property to be `float`, use {@link setFloatProperty}.
    *
-   * @note This function does not support setting `color` properties. Use
-   * {@link setColorProperty} instead.
+   * @since 1.11
    */
-  setProperty(name: string, value: TiledObjectPropertyValue): void;
+  setProperty(path: string[], value: TiledObjectPropertyValue): void;
 
   /**
    * Sets the value of the custom property with the given name to the given
@@ -1058,6 +1077,7 @@ declare class TiledObject {
    * The color is specified as a string "#RGB", "#RRGGBB" or "#AARRGGBB".
    *
    * @since 1.10
+   * @deprecated Use {@link setProperty} with a value created by {@link tiled.color} instead.
    */
   setColorProperty(name: string, value: color): void;
 
@@ -1070,6 +1090,7 @@ declare class TiledObject {
    * defaults to 255.
    *
    * @since 1.10
+   * @deprecated Use {@link setProperty} with a value created by {@link tiled.color} instead.
    */
   setColorProperty(name: string, red: number, green: number, blue: number, alpha?: number): void;
 
@@ -1154,7 +1175,7 @@ declare class Project extends TiledObject {
 /**
  * Details of a map that is added to a {@link World}.
  *
- * @since 1.10.3
+ * @since 1.11
  */
 declare class WorldMapEntry {
   /**
@@ -1174,7 +1195,7 @@ declare class WorldMapEntry {
  * Matching](https://doc.mapeditor.org/en/stable/manual/worlds/#using-pattern-matching)
  * section in the manual for more information.
  *
- * @since 1.10.3
+ * @since 1.11
  */
 declare class WorldPattern {
   /** 
@@ -1220,7 +1241,7 @@ declare class WorldPattern {
  * Worlds](https://doc.mapeditor.org/en/stable/manual/worlds/) page in the
  * manual for more information.
  *
- * @since 1.10.3
+ * @since 1.11
  */
 declare class World extends Asset {
   /**
@@ -1500,7 +1521,7 @@ declare class MapObject extends TiledObject {
  * The top-level assets supported by Tiled. Not all of these assets have
  * associated editors.
  *
- * @since 1.10.3
+ * @since 1.11
  */
 declare enum AssetType {
   TileMap = 1,
@@ -1556,7 +1577,7 @@ declare class Asset extends TiledObject {
   /**
    * The type of this asset.
    *
-   * @since 1.10.3
+   * @since 1.11
    */
   readonly assetType: AssetType;
 
@@ -1607,7 +1628,7 @@ declare class Asset extends TiledObject {
    * tiled.mapFormat} or {@link tiled.tilesetFormat}. This is currently not
    * supported for worlds.
    *
-   * @since 1.10.3
+   * @since 1.11
    */
   save(): boolean;
 }
@@ -2133,10 +2154,10 @@ declare class Image {
   setPixel(x: number, y: number, index_or_rgb: number): void;
 
   /**
-   * Sets the color at the specified location to the given color by
-   * string (supports values like "#rrggbb").
+   * Sets the color at the specified location to the given color (supports
+   * values like "#rrggbb" or those created by {@link tiled.color}).
    */
-  setPixelColor(x: number, y: number, color: string): void;
+  setPixelColor(x: number, y: number, color: color): void;
 
   /**
    * Fills the image with the given 32-bit unsigned color value (ARGB) or color
@@ -2145,10 +2166,10 @@ declare class Image {
   fill(index_or_rgb: number): void;
 
   /**
-   * Fills the image with the given color by string (supports values like
-   * "#rrggbb").
+   * Fills the image with the given color (supports values like
+   * "#rrggbb" or those created by {@link tiled.color}).
    */
-  fill(color: string): void;
+  fill(color: color): void;
 
   /**
    * Loads the image from the given file name. When no format is given it
@@ -2192,16 +2213,25 @@ declare class Image {
   setColor(index: number, rgb: number): void;
 
   /**
-   * Sets the color at the given index in the color table to a color by
-   * string (supports values like "#rrggbb").
+   * Sets the color at the given index in the color table to a color (supports
+   * values like "#rrggbb" or those created by {@link tiled.color}).
    */
-  setColor(index: number, color: string) : void;
+  setColor(index: number, color: color) : void;
 
   /**
    * Sets the color table given by an array of either 32-bit color values
     or strings (supports values like "#rrggbb").
    */
   setColorTable(colors: number[] | string[]): void;
+
+  /**
+   * Copies the given rectangle to a new image object.
+   *
+   * When no rectangle is given, the entire image is copied.
+   *
+   * @since 1.11
+   */
+  copy(rect?: rect) : Image;
 
   /**
    * Copies the given rectangle to a new image object.
@@ -2243,7 +2273,7 @@ declare class ImageLayer extends Layer {
   /**
    * Reference to the image rendered by this layer.
    *
-   * @since 1.10.3
+   * @since 1.11
    */
   imageFileName: string;
 
@@ -2466,10 +2496,20 @@ declare class Tile extends TiledObject {
    * Returns the image of this tile, or the image of its tileset if it doesn't
    * have an individual one.
    *
+   * Note that a tile represents a sub-rectangle of its image (or its tileset's
+   * image), even if is part of an image collection tileset. The {@link
+   * imageRect} property provides access to this sub-rectangle. If you need a
+   * copy of the tile's image that is already cropped to this sub-rectangle,
+   * you can use the following snippet:
+   *
+   * ```js
+   * let image = tile.image.copy(tile.imageRect);
+   * ```
+   *
    * You can assign an {@link Image} to this property to change the tile's
    * image. See {@link setImage} for more information.
    *
-   * @since 1.10.3
+   * @since 1.11
    */
   image: Image;
 
@@ -2525,7 +2565,7 @@ declare class Tile extends TiledObject {
    * when saving the tileset the image data will be embedded for formats that
    * support this (currently only TMX/TSX).
    *
-   * @note Before Tiled 1.10.3, this function did not change the image file
+   * @note Before Tiled 1.11, this function did not change the image file
    * name. For compatibility, set {@link imageFileName} before calling this
    * function, if necessary.
    *
@@ -3464,6 +3504,8 @@ declare class WangSet extends TiledObject {
  * and "#AARRGGBB" respectively. For example, the color red corresponds to a
  * triplet of "#FF0000" and a slightly transparent blue to a quad of
  * "#800000FF".
+ *
+ * Use {@link tiled.color} to create a color value.
  */
 interface color {}
 
@@ -3510,7 +3552,7 @@ declare class Tileset extends Asset {
    *
    * @note Map files are supported tileset image source as well.
    *
-   * @since 1.10.3
+   * @since 1.11
    */
   imageFileName : string
 
@@ -4478,6 +4520,24 @@ declare namespace tiled {
   export function mapFormatForFile(fileName: string): MapFormat | undefined;
 
   /**
+   * Creates a {@link color} based on the given color name (i.e. red or #ff0000).
+   *
+   * See [QColor::fromString](https://doc.qt.io/qt-6/qcolor.html#fromString)
+   * for the accepted color names.
+   *
+   * @since 1.11
+   */
+  export function color(name: string): color;
+
+  /**
+   * Creates a {@link color} with the RGB value r, g, b, and the alpha-channel
+   * (transparency) value of a (which defaults to 1.0).
+   *
+   * @since 1.11
+   */
+  export function color(r: number, g: number, b: number, a?: number): color;
+
+  /**
    * Creates a {@link FilePath} object with the given URL.
    */
   export function filePath(path: string): FilePath;
@@ -4608,6 +4668,13 @@ declare namespace tiled {
   export const assetOpened: Signal<Asset>;
 
   /**
+   * An asset has been reloaded.
+   *
+   * @since 1.11
+   */
+  export const assetReloaded: Signal<Asset>;
+
+  /**
    * An asset is about to be saved. Can be used to make last-minute
    * changes.
    */
@@ -4630,31 +4697,31 @@ declare namespace tiled {
 
   /**
    * A list of all currently loaded {@link World|worlds}.
-   * @since 1.10.3
+   * @since 1.11
    */
   export const worlds : World[];
 
   /**
    * Load a world contained in a .world file in the path fileName.
-   * @since 1.10.3
+   * @since 1.11
    */
   export function loadWorld(fileName : string) : void;
 
   /**
    * Unload a world contained in a .world file in the path fileName.
-   * @since 1.10.3
+   * @since 1.11
    */
   export function unloadWorld(fileName : string) : void;
 
   /**
    * Unload all currently loaded worlds.
-   * @since 1.10.3
+   * @since 1.11
    */
   export function unloadAllWorlds() : void;
 
   /**
    * Signal emitted when any world is loaded, unloaded, reloaded or changed.
-   * @since 1.10.3
+   * @since 1.11
    */
   export const worldsChanged : Signal<void>;
 }
@@ -4787,7 +4854,7 @@ declare class FileEdit extends Qt.QWidget {
   /**
    * The current file path.
    *
-   * @since 1.10.3
+   * @since 1.11
    */
   fileName: string;
 

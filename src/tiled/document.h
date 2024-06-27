@@ -67,8 +67,8 @@ public:
 
     DocumentType type() const { return mType; }
 
-    QString fileName() const;
-    QString canonicalFilePath() const;
+    const QString &fileName() const;
+    const QString &canonicalFilePath() const;
 
     /**
      * Returns the name with which to display this document. It is the file name
@@ -87,6 +87,8 @@ public:
      * The file format will be the same as this map was opened with.
      */
     virtual bool save(const QString &fileName, QString *error = nullptr) = 0;
+
+    virtual bool canReload() const { return false; }
 
     virtual FileFormat *writerFormat() const = 0;
 
@@ -115,6 +117,9 @@ public:
     bool changedOnDisk() const;
     void setChangedOnDisk(bool changedOnDisk);
 
+    bool isReadOnly() const;
+    void setReadOnly(bool readOnly);
+
     virtual QString lastExportFileName() const = 0;
     virtual void setLastExportFileName(const QString &fileName) = 0;
 
@@ -123,8 +128,6 @@ public:
 
     virtual void checkIssues() {}
 
-    static const QHash<QString, Document *> &documentInstances();
-
 signals:
     void changed(const ChangeEvent &change);
     void saved();
@@ -132,6 +135,7 @@ signals:
     void fileNameChanged(const QString &fileName,
                          const QString &oldFileName);
     void modifiedChanged();
+    void isReadOnlyChanged(bool readOnly);
 
     void currentObjectSet(Object *object);
     void currentObjectChanged(Object *object);
@@ -176,20 +180,19 @@ private:
 
     QUndoStack * const mUndoStack;
 
+    bool mReadOnly = false;
     bool mModified = false;
     bool mChangedOnDisk = false;
     bool mIgnoreBrokenLinks = false;
-
-    static QHash<QString, Document*> sDocumentInstances;
 };
 
 
-inline QString Document::fileName() const
+inline const QString &Document::fileName() const
 {
     return mFileName;
 }
 
-inline QString Document::canonicalFilePath() const
+inline const QString &Document::canonicalFilePath() const
 {
     return mCanonicalFilePath;
 }
@@ -233,9 +236,9 @@ inline bool Document::changedOnDisk() const
     return mChangedOnDisk;
 }
 
-inline const QHash<QString, Document *> &Document::documentInstances()
+inline bool Document::isReadOnly() const
 {
-    return sDocumentInstances;
+    return mReadOnly;
 }
 
 using DocumentPtr = QSharedPointer<Document>;

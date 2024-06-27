@@ -22,6 +22,7 @@
 
 #include "changeevents.h"
 #include "containerhelpers.h"
+#include "documentmanager.h"
 #include "editableasset.h"
 #include "logginginterface.h"
 #include "object.h"
@@ -34,18 +35,20 @@
 
 namespace Tiled {
 
-QHash<QString, Document*> Document::sDocumentInstances;
-
 Document::Document(DocumentType type, const QString &fileName,
                    QObject *parent)
     : QObject(parent)
     , mType(type)
     , mFileName(fileName)
-    , mCanonicalFilePath(QFileInfo(mFileName).canonicalFilePath())
     , mUndoStack(new QUndoStack(this))
 {
-    if (!mCanonicalFilePath.isEmpty())
-        sDocumentInstances.insert(mCanonicalFilePath, this);
+    const QFileInfo fileInfo { fileName };
+    mLastSaved = fileInfo.lastModified();
+    mCanonicalFilePath = fileInfo.canonicalFilePath();
+    mReadOnly = fileInfo.exists() && !fileInfo.isWritable();
+
+    if (auto manager = DocumentManager::maybeInstance())
+        manager->registerDocument(this);
 
     connect(mUndoStack, &QUndoStack::indexChanged, this, &Document::updateIsModified);
     connect(mUndoStack, &QUndoStack::cleanChanged, this, &Document::updateIsModified);
@@ -57,11 +60,8 @@ Document::~Document()
     if (mCurrentObjectDocument)
         mCurrentObjectDocument->disconnect(this);
 
-    if (!mCanonicalFilePath.isEmpty()) {
-        auto i = sDocumentInstances.find(mCanonicalFilePath);
-        if (i != sDocumentInstances.end() && *i == this)
-            sDocumentInstances.erase(i);
-    }
+    if (auto manager = DocumentManager::maybeInstance())
+        manager->unregisterDocument(this);
 }
 
 EditableAsset *Document::editable()
@@ -84,17 +84,14 @@ void Document::setFileName(const QString &fileName)
 
     QString oldFileName = mFileName;
 
-    if (!mCanonicalFilePath.isEmpty()) {
-        auto i = sDocumentInstances.find(mCanonicalFilePath);
-        if (i != sDocumentInstances.end() && *i == this)
-            sDocumentInstances.erase(i);
-    }
+    DocumentManager::instance()->unregisterDocument(this);
 
+    const QFileInfo fileInfo { fileName };
     mFileName = fileName;
-    mCanonicalFilePath = QFileInfo(fileName).canonicalFilePath();
+    mCanonicalFilePath = fileInfo.canonicalFilePath();
+    setReadOnly(fileInfo.exists() && !fileInfo.isWritable());
 
-    if (!mCanonicalFilePath.isEmpty())
-        sDocumentInstances.insert(mCanonicalFilePath, this);
+    DocumentManager::instance()->registerDocument(this);
 
     emit fileNameChanged(fileName, oldFileName);
 }
@@ -162,6 +159,10 @@ void Document::setCurrentObject(Object *object, Document *owningDocument)
 void Document::currentObjectDocumentChanged(const ChangeEvent &change)
 {
     switch (change.type) {
+    case ChangeEvent::DocumentAboutToReload:
+        setCurrentObject(nullptr);
+        break;
+
     case ChangeEvent::TilesAboutToBeRemoved: {
         auto tilesEvent = static_cast<const TilesEvent&>(change);
 
@@ -308,6 +309,15 @@ void Document::setIgnoreBrokenLinks(bool ignoreBrokenLinks)
 void Document::setChangedOnDisk(bool changedOnDisk)
 {
     mChangedOnDisk = changedOnDisk;
+}
+
+void Document::setReadOnly(bool readOnly)
+{
+    if (mReadOnly == readOnly)
+        return;
+
+    mReadOnly = readOnly;
+    emit isReadOnlyChanged(readOnly);
 }
 
 } // namespace Tiled

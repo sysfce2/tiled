@@ -2151,7 +2151,7 @@ void MainWindow::updateActions()
     mUi->actionExportAsImage->setEnabled(mapDocument);
     mUi->actionExport->setEnabled(mapDocument || tilesetDocument);
     mUi->actionExportAs->setEnabled(mapDocument || tilesetDocument);
-    mUi->actionReload->setEnabled(mapDocument || (tilesetDocument && tilesetDocument->canReload()));
+    mUi->actionReload->setEnabled(document && document->canReload());
     mUi->actionClose->setEnabled(document);
     mUi->actionCloseAll->setEnabled(document);
 
@@ -2323,9 +2323,8 @@ void MainWindow::retranslateUi()
 void MainWindow::exportMapAs(MapDocument *mapDocument)
 {
     SessionOption<QString> lastUsedExportFilter { "map.lastUsedExportFilter" };
-    QString fileName = mapDocument->fileName();
     QString selectedFilter = lastUsedExportFilter;
-    auto exportDetails = chooseExportDetails<MapFormat>(fileName,
+    auto exportDetails = chooseExportDetails<MapFormat>(mapDocument->fileName(),
                                                         mapDocument->lastExportFileName(),
                                                         selectedFilter,
                                                         this);

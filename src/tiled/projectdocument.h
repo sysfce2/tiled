@@ -26,12 +26,13 @@
 
 namespace Tiled {
 
-class ProjectDocument : public Document
+class ProjectDocument final : public Document
 {
     Q_OBJECT
 
 public:
     ProjectDocument(std::unique_ptr<Project> project, QObject *parent = nullptr);
+    ~ProjectDocument() override;
 
     QString displayName() const override;
     FileFormat *writerFormat() const override;

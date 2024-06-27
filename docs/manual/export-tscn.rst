@@ -56,7 +56,7 @@ Tilesets support the following property:
 **Deprecated:** The ``exportAlternates`` property is necessary when using
 flipped or rotated tiles in Godot 4.0 and 4.1. This will create 7 alternate
 tiles for each tile, allowing all flipped and rotation combinations. This
-has been deprecated in Tiled 1.10.3 in favour of Godot 4.2's native rotation
+has been deprecated in Tiled 1.11 in favour of Godot 4.2's native rotation
 and flipping support.
 
 Tile Properties
@@ -93,7 +93,7 @@ overwritten every time the map is exported.
 
 .. raw:: html
 
-   <div class="new">Since Tiled 1.10.3</div>
+   <div class="new">Since Tiled 1.11</div>
 
 Object Properties
 ~~~~~~~~~~~~~~~~~
@@ -102,7 +102,7 @@ Objects support the following property:
 
 * string ``resPath`` (required)
 
-The ``resPath`` property takes the form of 'res://<pbject path>.tscn' and must
+The ``resPath`` property takes the form of 'res://<object path>.tscn' and must
 be set to the path of the Godot object you wish to replace the object with.
 Objects without this property set will not be exported.
 

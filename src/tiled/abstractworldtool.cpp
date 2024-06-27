@@ -214,7 +214,7 @@ void AbstractWorldTool::showContextMenu(QGraphicsSceneMouseEvent *event)
                        this, [=] { addAnotherMapToWorld(insertPos); });
 
         if (targetDocument != nullptr && targetDocument != currentDocument) {
-            const QString targetFilename = targetDocument->fileName();
+            const QString &targetFilename = targetDocument->fileName();
             menu.addAction(QIcon(QLatin1String(":images/24/world-map-remove-this.png")),
                            tr("Remove \"%1\" from World \"%2\"")
                            .arg(targetDocument->displayName(),
@@ -277,7 +277,7 @@ void AbstractWorldTool::addAnotherMapToWorld(QPoint insertPos)
     QString error;
     DocumentPtr document = DocumentManager::instance()->loadDocument(fileName, nullptr, &error);
 
-    if (!document) {
+    if (!document || document->type() != Document::MapDocumentType) {
         QMessageBox::critical(MainWindow::instance(),
                               tr("Error Opening File"),
                               tr("Error opening '%1':\n%2").arg(fileName, error));

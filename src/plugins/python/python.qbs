@@ -10,7 +10,7 @@ TiledPlugin {
         if (qbs.targetOS.contains("windows"))
             return pythonDllProbe.found;
 
-        return pkgConfigPython3Embed.found || pkgConfigPython3.found;
+        return pkgConfigPython3.found;
     }
 
     cpp.cxxFlags: {
@@ -22,31 +22,22 @@ TiledPlugin {
 
     Probes.PkgConfigProbe {
         id: pkgConfigPython3
-        name: "python3"
-    }
-
-    Probes.PkgConfigProbe {
-        id: pkgConfigPython3Embed
         name: "python3-embed"
+        minVersion: "3.8"
     }
 
     PythonProbe {
         id: pythonDllProbe
         pythonDir: Environment.getEnv("PYTHONHOME")
-    }
-
-    Properties {
-        condition: pkgConfigPython3Embed.found
-        cpp.cxxFlags: outer.concat(pkgConfigPython3Embed.cflags)
-        cpp.dynamicLibraries: pkgConfigPython3Embed.libraries
-        cpp.libraryPaths: pkgConfigPython3Embed.libraryPaths
-        cpp.linkerFlags: pkgConfigPython3Embed.linkerFlags
+        minVersion: "3.8"
     }
 
     Properties {
         condition: pkgConfigPython3.found
-        cpp.cxxFlags: outer.concat(pkgConfigPython3.cflags)
+        cpp.cxxFlags: outer.concat(pkgConfigPython3.compilerFlags)
+        cpp.defines: pkgConfigPython3.defines
         cpp.dynamicLibraries: pkgConfigPython3.libraries
+        cpp.includePaths: pkgConfigPython3.includePaths
         cpp.libraryPaths: pkgConfigPython3.libraryPaths
         cpp.linkerFlags: pkgConfigPython3.linkerFlags
     }

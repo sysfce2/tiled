@@ -15,8 +15,8 @@ on:
     - '.travis.yml'
 
 env:
-  QBS_VERSION: 2.2.1
-  SENTRY_VERSION: 0.6.7
+  QBS_VERSION: 2.3.1
+  SENTRY_VERSION: 0.7.6
   SENTRY_ORG: mapeditor
   SENTRY_PROJECT: tiled
   TILED_RELEASE: ${{ startsWith(github.ref, 'refs/tags/v') }}
@@ -48,13 +48,13 @@ jobs:
         include:
         - qt_version: 5.15.2
           qt_version_major: 5
-        - qt_version: 6.6.2
+        - qt_version: 6.7.2
           qt_version_major: 6
 
     env:
       TILED_VERSION: ${{ needs.version.outputs.version }}
       QT_VERSION: ${{ matrix.qt_version }}
-      QTCREATOR_VERSION: 12.0.1
+      QTCREATOR_VERSION: 13.0.2
 
     steps:
     - name: Checkout repository
@@ -104,7 +104,7 @@ jobs:
         mkdir sentry-native
         pushd sentry-native
         unzip -q ../sentry-native.zip
-        cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+        cmake -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DSENTRY_BACKEND=breakpad
         cmake --build build --parallel
         sudo cmake --install build --prefix /usr --config RelWithDebInfo
         popd
@@ -115,11 +115,12 @@ jobs:
 
     - name: Upload symbols and sources to Sentry
       if: github.repository == 'mapeditor/tiled' && github.event_name == 'push'
+      continue-on-error: ${{ needs.version.outputs.release == 'false' }}
       env:
         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
       run: |
         curl -sL https://sentry.io/get-cli/ | bash
-        sentry-cli upload-dif --include-sources src .
+        sentry-cli debug-files upload --include-sources src AppDir
 
     - name: Build AppImage
       run: |
@@ -154,11 +155,12 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Set Tiled version
       id: version
       run: |
-        sed -i 's/^version: .*/version: '"${TILED_VERSION}"'/g' snap/snapcraft.yaml
         if [[ "$TILED_RELEASE" == 'true' ]]; then echo "snap_channel=candidate" >> $GITHUB_OUTPUT ; fi
         if [[ "$TILED_RELEASE" != 'true' ]]; then echo "snap_channel=beta" >> $GITHUB_OUTPUT ; fi
 
@@ -183,7 +185,7 @@ jobs:
 
   macos:
     name: macOS (${{ matrix.version_suffix }})
-    runs-on: macos-11
+    runs-on: macos-latest
     needs: version
 
     strategy:
@@ -192,14 +194,14 @@ jobs:
         - qt_version: 5.12.12
           version_suffix: "10.12-10.15"
           architectures: x86_64
-        - qt_version: 6.6.2
+        - qt_version: 6.7.2
           version_suffix: "11+"
           architectures: x86_64,arm64
 
     env:
       TILED_VERSION: ${{ needs.version.outputs.version }}
       QT_VERSION: ${{ matrix.qt_version }}
-      QTCREATOR_VERSION: 12.0.1
+      QTCREATOR_VERSION: 13.0.2
 
     steps:
     - name: Checkout repository
@@ -270,7 +272,7 @@ jobs:
 
   windows:
     name: Windows (${{ matrix.arch }}-bit, Qt ${{ matrix.qt_version_major }})
-    runs-on: windows-2019
+    runs-on: windows-latest
     needs: version
 
     strategy:
@@ -284,7 +286,7 @@ jobs:
           mingw_version: 8.1.0
           mingw_component: mingw
           mingw_path: /c/Qt/Tools/mingw810_32/bin
-        - qt_version: 6.6.2
+        - qt_version: 6.7.2
           qt_version_major: 6
           qt_toolchain: win64_mingw
           arch: 64

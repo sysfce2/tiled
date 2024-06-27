@@ -105,9 +105,11 @@ public:
     TilesetEditor *tilesetEditor() const;
     MapEditor *mapEditor() const;
 
+    Q_INVOKABLE QColor color(const QString &name) const;
+    Q_INVOKABLE QColor color(float r, float g, float b, float a = 1.0f) const;
     Q_INVOKABLE Tiled::FilePath filePath(const QUrl &path) const;
     Q_INVOKABLE Tiled::ObjectRef objectRef(int id) const;
-    Q_INVOKABLE QVariant propertyValue(const QString &typeName, const QVariant &value) const;
+    Q_INVOKABLE QVariant propertyValue(const QString &typeName, const QJSValue &value) const;
     Q_INVOKABLE bool versionLessThan(const QString &a);
     Q_INVOKABLE bool versionLessThan(const QString &a, const QString &b);
 
@@ -150,6 +152,7 @@ public:
 signals:
     void assetCreated(Tiled::EditableAsset *asset);
     void assetOpened(Tiled::EditableAsset *asset);
+    void assetReloaded(Tiled::EditableAsset *asset);
     void assetAboutToBeSaved(Tiled::EditableAsset *asset);
     void assetSaved(Tiled::EditableAsset *asset);
     void assetAboutToBeClosed(Tiled::EditableAsset *asset);
@@ -174,6 +177,7 @@ public slots:
 private:
     void documentCreated(Document *document);
     void documentOpened(Document *document);
+    void documentReloaded(Document *document);
     void documentAboutToBeSaved(Document *document);
     void documentSaved(Document *document);
     void documentAboutToClose(Document *document);
